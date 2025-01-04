@@ -1,40 +1,48 @@
-use std::fs;
+use std::{error::Error, fs};
 
 use crate::config::Config;
 use super::Search;
 
-pub struct FileSearch<'a> {
-    query: &'a String,
-    file_path: &'a String,
+pub struct FileSearch {
+    query: String,
+    file_path: String,
+    contents: String,
     ignore_case: bool,
 }
 
-impl<'a> Search for FileSearch<'a> {}
+impl Search for FileSearch {}
 
-impl<'a> FileSearch<'a> {
-    pub fn new(config: &'a Config) -> FileSearch<'a> {
-        FileSearch{
-            query: config.get_query(),
-            file_path: config.get_file_path(),
-            ignore_case: *config.get_ignore_case()
+impl FileSearch {
+    pub fn build(config: &Config) -> Result<FileSearch, Box<dyn Error>> {
+        let mut contents = fs::read_to_string(config.get_file_path()).unwrap();
+        let mut query = config.get_query().clone();
+        let file_path =  config.get_file_path().clone();
+        let ignore_case = config.get_ignore_case().clone();
+
+        if ignore_case {
+            contents = contents.to_lowercase();
+            query = query.to_lowercase();
         }
+
+        Ok(FileSearch{
+            query,
+            file_path,
+            ignore_case,
+            contents
+        })
     } 
 
-    pub fn display(&self) {
-        let mut contents = fs::read_to_string(self.file_path).unwrap();
-        
-        let results = if self.ignore_case {
-            contents = contents.to_lowercase();
-            let query = self.query.to_lowercase();
-            
-            self.search(&query, &contents)
-        }else{
-            self.search(self.query, &contents)
-        };
-        
+    pub fn display(&self, results: &Vec<&str>) {
         for line in results {
             println!("{line}");
         }
     }
 
+    pub fn get_contents(&self) -> &String {
+        &self.contents
+    }
+
+    pub fn get_query(&self) -> &String {
+        &self.query
+    }
 }

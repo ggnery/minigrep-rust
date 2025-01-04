@@ -8,14 +8,9 @@ pub enum SearchType {
 
 pub trait Search {
     fn search<'a>(&self, query: &str, contents: &'a str) -> Vec<&'a str>{
-        let mut result: Vec<&str> = Vec::new();
-    
-        for line in contents.lines() {
-            if line.contains(query) {
-                result.push(line);
-            }
-        }
-    
-        result
+        contents
+            .lines()
+            .filter(|line| line.contains(query))
+            .collect()
     }
 }

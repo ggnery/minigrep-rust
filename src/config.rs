@@ -1,11 +1,11 @@
-use std::{env, path::Path};
+use std::{borrow::Borrow, env, path::Path};
 
 use crate::{custom_errors::GreepError, search::SearchType};
 
 pub struct Config<'a> {
-    query: Option<&'a String>,
-    file_path: Option<&'a String>,
-    source_path: Option<&'a String>,
+    query: Option<String>,
+    file_path: Option<String>,
+    source_path: Option<String>,
     string_buff: Option<&'a String>,
     search_type: Option<SearchType>,
     ignore_case: bool,
@@ -15,8 +15,7 @@ pub struct Config<'a> {
 
 
 impl<'a> Config<'a> {
-    pub fn build(args: &Vec<String>) -> Result<Config, GreepError> {
- 
+    pub fn default() -> Config<'a>{
         let file_path = None;
         let source_path= None;
         let string_buff = None;
@@ -24,14 +23,18 @@ impl<'a> Config<'a> {
         let query = None;
         let ignore_case = env::var("IGNORE_CASE").is_ok();
 
-        let default_config = Config {
+        Config {
             file_path,
             source_path,
             string_buff,
             ignore_case,
             query,
             search_type
-        };
+        }
+    }
+
+    pub fn build(args: &Vec<String>) -> Result<Config, GreepError> {
+        let default_config = Config::default();
 
         match args.len() {
             n if n < 3 => { return Err(GreepError::NotEnoughtArgs); },
@@ -41,8 +44,8 @@ impl<'a> Config<'a> {
                     return Err(GreepError::GenericError("Invalid command"));
                 }else{
                     return Ok(Config {
-                        query: Some(&args[2]),
-                        source_path: Some(&args[3]),       
+                        query: Some(args[2].clone()),
+                        source_path: Some(args[3].clone()),       
                         search_type: Some(SearchType::RecursiveSearch),
                         ..default_config
                     });
@@ -53,15 +56,15 @@ impl<'a> Config<'a> {
 
                 if Path::new(&args[2]).is_file() {
                     return Ok(Config {
-                        query: Some(&args[1]),
-                        file_path: Some(&args[2]),
+                        query: Some(args[1].clone()),
+                        file_path: Some(args[2].clone()),
                         search_type: Some(SearchType::FileSearch),
                         ..default_config
                     })
                 }else{
                     return Ok(Config {
-                        query: Some(&args[1]),
-                        file_path: Some(&args[2]),
+                        query: Some(args[1].clone()),
+                        file_path: Some(args[2].clone()),
                         string_buff: Some(&args[2]),
                         search_type: Some(SearchType::StringSearch),
                         ..default_config
@@ -78,11 +81,11 @@ impl<'a> Config<'a> {
     }
 
     pub fn get_file_path(&self) -> &String {
-        &self.file_path.expect("file_path field not present")
+        self.file_path.as_ref().expect("file_path field not present")
     }
 
     pub fn get_query(&self) -> &String {
-        &self.query.expect("query field not present")
+        self.query.as_ref().expect("query field not present")
     }
     
     pub fn get_ignore_case(&self) -> &bool {
